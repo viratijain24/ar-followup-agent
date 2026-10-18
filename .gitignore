@@ -1,0 +1,28 @@
+# Secrets
+.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Personal notes (learning log)
+notes/
+
+# LLM / embedding response cache
+.cache/
+
+# Generated data (rebuild with: python -m src.generate_data)
+data/invoices/
+data/customers.csv
+data/payments.csv
+data/ground_truth.json
+
+# Generated outputs
+outputs/
+traces/
+data/index/
+
+# IDE
+.idea/
