@@ -25,6 +25,8 @@ SYSTEM_PROMPT = """You extract structured data from invoice PDFs for an accounts
 Rules:
 - Extract only what is printed on the invoice. Never guess or invent values.
 - customer_name is the billed customer (the "bill to" party), not the company issuing the invoice.
+  Give the company's legal name only: exclude customer IDs/account codes (e.g. "(C123)"), contact
+  persons, and email addresses.
 - Dates: output ISO format YYYY-MM-DD. Dotted dates such as 13.09.2026 are day-first (DD.MM.YYYY).
 - Money: plain numbers with no currency symbols or thousands separators (e.g. 6264.00).
 - currency: the 3-letter ISO 4217 code (e.g. "Rs." means INR, "€" means EUR, "£" means GBP).
@@ -125,9 +127,10 @@ def extract_invoice(pdf_path: Path, customers: dict[str, str], thinking_level: s
     return result
 
 
-def extract_all(invoice_dir: Path = Path("data/invoices"), thinking_level: str | None = None,
+def extract_all(data_dir: Path = Path("data"), thinking_level: str | None = None,
                 verbose: bool = True) -> list[ExtractionResult]:
-    customers = load_customers()
+    customers = load_customers(data_dir / "customers.csv")
+    invoice_dir = data_dir / "invoices"
     results = []
     for pdf in sorted(invoice_dir.glob("*.pdf")):
         r = extract_invoice(pdf, customers, thinking_level)

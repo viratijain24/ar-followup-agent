@@ -18,6 +18,7 @@ data/invoices/
 data/customers.csv
 data/payments.csv
 data/ground_truth.json
+data_holdout/
 
 # Generated outputs
 outputs/

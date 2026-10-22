@@ -95,11 +95,11 @@ def print_report(m: dict, label: str) -> None:
         print(f"  MISMATCH {mm['pdf']} [{mm['layout']}] {mm['field']}: expected {mm['expected']!r}, got {mm['got']!r}")
 
 
-def run(thinking_level: str | None = None, out_dir: Path = Path("outputs")) -> dict:
-    results = extract_all(thinking_level=thinking_level, verbose=True)
-    metrics = evaluate(results)
-    label = f"thinking={thinking_level or 'default'}"
+def run(data_dir: Path = Path("data"), thinking_level: str | None = None, out_dir: Path = Path("outputs")) -> dict:
+    results = extract_all(data_dir, thinking_level=thinking_level, verbose=True)
+    metrics = evaluate(results, data_dir / "ground_truth.json")
+    label = f"data={data_dir}, thinking={thinking_level or 'default'}"
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / f"eval_extraction_{thinking_level or 'default'}.json").write_text(json.dumps(metrics, indent=2))
+    (out_dir / f"eval_extraction_{data_dir.name}.json").write_text(json.dumps(metrics, indent=2))
     print_report(metrics, label)
     return metrics
