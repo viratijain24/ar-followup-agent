@@ -11,7 +11,7 @@ must be accurate, courteous, and proportionate to how late the payment is. Our g
 paid while keeping the customer relationship healthy.
 
 ## 1. Overdue stages
-<!-- stage: all -->
+<!-- stage: reference -->
 "Days overdue" counts calendar days after the invoice due date, using the outstanding balance
 (invoice total minus payments received). An invoice is in exactly one stage:
 
@@ -63,7 +63,7 @@ balances." Never state a calculated fee amount in a reminder: fees are only invo
 after approval by the finance director. Late fees are never mentioned at the friendly stage.
 
 ## 7. Required content in every reminder
-<!-- stage: all -->
+<!-- stage: always -->
 Every reminder must include: the invoice number, the original invoice total, the outstanding
 balance, the due date, and how to pay (bank transfer to Example Bank, account 000123456789,
 quoting the invoice number). Every amount, date, and invoice number in a reminder must match our

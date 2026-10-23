@@ -4,6 +4,7 @@ customer_id: C002
 date: 2026-09-16
 direction: inbound
 invoices: [INV-1008]
+reference: direct
 ---
 
 From: Marcus Ortega <payables@bluefin.example>

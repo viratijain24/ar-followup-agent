@@ -5,7 +5,7 @@ Sections are added as the pipeline grows (extraction now; verifier and latency/c
 import argparse
 from pathlib import Path
 
-from eval import extraction
+from eval import extraction, retrieval
 from src import llm
 
 
@@ -18,6 +18,8 @@ def main() -> None:
     args = parser.parse_args()
     llm.set_cache(not args.no_cache)
     extraction.run(args.data, thinking_level=args.thinking)
+    if args.data == Path("data"):  # retrieval labels are written for the dev set's corpus
+        retrieval.run(args.data)
 
 
 if __name__ == "__main__":

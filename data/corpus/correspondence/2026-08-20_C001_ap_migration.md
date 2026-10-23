@@ -4,6 +4,7 @@ customer_id: C001
 date: 2026-08-20
 direction: inbound
 invoices: [INV-1001]
+reference: direct
 ---
 
 From: Dana Whitfield <ap@acmeretail.example>

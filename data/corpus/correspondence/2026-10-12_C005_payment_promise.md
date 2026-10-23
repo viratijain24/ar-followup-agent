@@ -4,6 +4,7 @@ customer_id: C005
 date: 2026-10-12
 direction: inbound
 invoices: [INV-1005]
+reference: direct
 ---
 
 From: Arjun Menon <finance@kaveritextiles.example>
