@@ -39,9 +39,14 @@ class QuotaExhausted(RuntimeError):
     """The model's (daily) quota is used up; retrying now is pointless."""
 
 
-def set_cache(enabled: bool) -> None:
-    global _cache_enabled
+_embed_cache_enabled = True
+
+
+def set_cache(enabled: bool, embeddings: bool | None = None) -> None:
+    """Toggle reading from the cache (responses are always written). `embeddings` defaults to `enabled`."""
+    global _cache_enabled, _embed_cache_enabled
     _cache_enabled = enabled
+    _embed_cache_enabled = enabled if embeddings is None else embeddings
 
 
 def chat_model() -> str:
@@ -76,7 +81,8 @@ def _key(kind: str, payload: Any) -> str:
 
 def _cache_read(kind: str, key: str) -> dict | None:
     path = CACHE_DIR / kind / f"{key}.json"
-    if _cache_enabled and path.exists():
+    enabled = _embed_cache_enabled if kind == "embed" else _cache_enabled
+    if enabled and path.exists():
         return json.loads(path.read_text(encoding="utf-8"))
     return None
 
@@ -112,13 +118,15 @@ def _call_with_backoff(fn, *args, **kwargs) -> tuple[Any, float]:
         except Exception as exc:  # SDK errors expose the HTTP status as .code or .status_code
             status = getattr(exc, "code", None) or getattr(exc, "status_code", None)
             timed_out = "timeout" in type(exc).__name__.lower() or "timed out" in str(exc).lower()
+            # Dropped connections ("Server disconnected without sending a response") are transient too.
+            timed_out = timed_out or type(exc).__module__.startswith(("httpx", "httpcore"))
             if status == 429 and (server_delay := _server_retry_delay(exc) or 0) > MAX_SERVER_RETRY_DELAY_S:
                 raise QuotaExhausted(f"quota exhausted for {kwargs.get('model')}; server says retry in "
                                      f"{server_delay / 3600:.1f}h. Wait, or set GEMINI_MODEL in .env.") from exc
             if (status not in RETRYABLE and not timed_out) or attempt == MAX_ATTEMPTS - 1:
                 raise
             delay = max(min(2 ** attempt * 5, 60), _server_retry_delay(exc) or 0)
-            reason = "timeout" if timed_out else f"HTTP {status}"
+            reason = f"{type(exc).__name__}" if timed_out else f"HTTP {status}"
             print(f"  [llm] {reason}, retrying in {delay:.0f}s (attempt {attempt + 1}/{MAX_ATTEMPTS})", flush=True)
             time.sleep(delay)
 
@@ -141,14 +149,17 @@ def _to_sdk_part(p: dict) -> types.Part:
 
 def generate(parts: list[dict], *, system: str | None = None, schema: dict | None = None,
              thinking_level: str | None = None, temperature: float | None = None,
-             model: str | None = None) -> LLMResult:
-    """One Gemini call. `schema` (a JSON schema) switches on native structured JSON output."""
+             model: str | None = None, seed: int | None = None) -> LLMResult:
+    """One Gemini call. `schema` (a JSON schema) switches on native structured JSON output.
+    `seed` makes sampling repeatable and gives repeated samples distinct cache keys."""
     model = model or chat_model()
     config: dict[str, Any] = {}
     if thinking_level:
         config["thinking_level"] = thinking_level
     if temperature is not None:
         config["temperature"] = temperature
+    if seed is not None:
+        config["seed"] = seed
 
     # Hash PDFs by content digest so cache keys stay small.
     key_parts = [{**p, "data": hashlib.sha256(p["data"].encode()).hexdigest()} if "data" in p else p for p in parts]
@@ -159,6 +170,7 @@ def generate(parts: list[dict], *, system: str | None = None, schema: dict | Non
     sdk_config = types.GenerateContentConfig(
         system_instruction=system,
         temperature=temperature,
+        seed=seed,
         thinking_config=types.ThinkingConfig(thinking_level=thinking_level) if thinking_level else None,
         response_mime_type="application/json" if schema else None,
         response_json_schema=schema,
